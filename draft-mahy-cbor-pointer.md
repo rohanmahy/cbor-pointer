@@ -18,12 +18,12 @@ keyword:
  - XPointer
  - CBOR Pointer
 venue:
-  group: WG
-  type: Working Group
-  mail: WG@example.com
-  arch: https://example.com/WG
-  github: USER/REPO
-  latest: https://example.com/LATEST
+  group: "Concise Binary Object Representation Maintenance and Extensions"
+  type: "Working Group"
+  mail: "cbor@ietf.org"
+  arch: "https://www.ietf.org/mail-archive/web/cbor/current/maillist.html"
+  github: "rohanmahy/cbor-pointer"
+  latest: "https://rohanmahy.github.io/cbor-pointer/draft-mahy-cbor-pointer.html"
 
 author:
  -

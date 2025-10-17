@@ -61,7 +61,7 @@ The entire array can be implicitly typed or explicitly typed.
 The first pathspec operates on the root of the CBOR or CBOR sequence document as the parent element.
 The entire CBOR document matches the CBOR Pointer `[]`.
 
-Evaluating a CBOR Pointer returns either an array containing a single valid CBOR element, or returns null.
+Evaluating a CBOR Pointer returns either an array containing a single valid CBOR element, or returns `null`.
 
 ## Implicit Pathspecs
 

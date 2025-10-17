@@ -1092,14 +1092,15 @@ It is analogous to JSON Pointer.<a href="#section-abstract-1" class="pilcrow">¶
       </h2>
 <p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
 <p id="section-note.1-2">
-        The latest revision of this draft can be found at <span><a href="https://example.com/LATEST">https://example.com/LATEST</a></span>.
+        The latest revision of this draft can be found at <span><a href="https://rohanmahy.github.io/cbor-pointer/draft-mahy-cbor-pointer.html">https://rohanmahy.github.io/cbor-pointer/draft-mahy-cbor-pointer.html</a></span>.
         Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-mahy-cbor-pointer/">https://datatracker.ietf.org/doc/draft-mahy-cbor-pointer/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
 <p id="section-note.1-3">
         Discussion of this document takes place on the
-        WG Working Group mailing list (<span><a href="mailto:WG@example.com">mailto:WG@example.com</a></span>),
-        which is archived at <span><a href="https://example.com/WG">https://example.com/WG</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
+        Concise Binary Object Representation Maintenance and Extensions Working Group mailing list (<span><a href="mailto:cbor@ietf.org">mailto:cbor@ietf.org</a></span>),
+        which is archived at <span><a href="https://www.ietf.org/mail-archive/web/cbor/current/maillist.html">https://www.ietf.org/mail-archive/web/cbor/current/maillist.html</a></span>.
+        Subscribe at <span><a href="https://www.ietf.org/mailman/listinfo/cbor/">https://www.ietf.org/mailman/listinfo/cbor/</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
 <p id="section-note.1-4">Source for this draft and an issue tracker can be found at
-        <span><a href="https://github.com/USER/REPO">https://github.com/USER/REPO</a></span>.<a href="#section-note.1-4" class="pilcrow">¶</a></p>
+        <span><a href="https://github.com/rohanmahy/cbor-pointer">https://github.com/rohanmahy/cbor-pointer</a></span>.<a href="#section-note.1-4" class="pilcrow">¶</a></p>
 </section>
 <div id="status-of-memo">
 <section id="section-boilerplate.1">
@@ -1228,7 +1229,7 @@ appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶<
 The entire array can be implicitly typed or explicitly typed.
 The first pathspec operates on the root of the CBOR or CBOR sequence document as the parent element.
 The entire CBOR document matches the CBOR Pointer <code>[]</code>.<a href="#section-3-1" class="pilcrow">¶</a></p>
-<p id="section-3-2">Evaluating a CBOR Pointer returns either an array containing a single valid CBOR element, or returns null.<a href="#section-3-2" class="pilcrow">¶</a></p>
+<p id="section-3-2">Evaluating a CBOR Pointer returns either an array containing a single valid CBOR element, or returns <code>null</code>.<a href="#section-3-2" class="pilcrow">¶</a></p>
 <div id="implicit-pathspecs">
 <section id="section-3.1">
         <h3 id="name-implicit-pathspecs">

@@ -163,7 +163,7 @@ Explicit pathspecs involving embedded byte strings require an additional pathspe
 TBD1([            # Explicit Pathspecs
     TBD4(777),    # Tag 777
     TBD2(2),      # 3rd Array element
-    simple(TBD1), # decode byte string
+    simple(TBD0), # decode byte string
     TBD3(2)       # Map key 2
 ])
 ~~~
@@ -175,7 +175,7 @@ For example, the following explicit pointer applied to our original example:
 TBD1([            # Explicit Pathspecs
     TBD4(777),    # Tag 777
     TBD2(2),      # 3rd Array element
-    simple(TBD1)  # decode byte string
+    simple(TBD0)  # decode byte string
 ])
 ~~~
 

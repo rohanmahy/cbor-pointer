@@ -3,9 +3,9 @@
 
 
 Concise Binary Object Representation Maintenance and Extensions  R. Mahy
-Internet-Draft                                           17 October 2025
+Internet-Draft                                               6 July 2026
 Intended status: Informational                                          
-Expires: 20 April 2026
+Expires: 7 January 2027
 
 
 CBOR Pointer: Selecting Elements of Concise Binary Object Representation
@@ -51,11 +51,11 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 20 April 2026.
+   This Internet-Draft will expire on 7 January 2027.
 
 Copyright Notice
 
-   Copyright (c) 2025 IETF Trust and the persons identified as the
+   Copyright (c) 2026 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
    This document is subject to BCP 78 and the IETF Trust's Legal
@@ -259,7 +259,7 @@ Table of Contents
    TBD1([            # Explicit Pathspecs
        TBD4(777),    # Tag 777
        TBD2(2),      # 3rd Array element
-       simple(TBD1), # decode byte string
+       simple(TBD0), # decode byte string
        TBD3(2)       # Map key 2
    ])
 
@@ -270,7 +270,7 @@ Table of Contents
    TBD1([            # Explicit Pathspecs
        TBD4(777),    # Tag 777
        TBD2(2),      # 3rd Array element
-       simple(TBD1)  # decode byte string
+       simple(TBD0)  # decode byte string
    ])
 
    returns [ {2:45, "pdq":false} ] as its result.

@@ -120,7 +120,7 @@ Given the following source document, the table below gives the corresponding res
 | [777, 1, "y"] | [["l","m"]] |
 | [777, 1, "y", 1] | ["m"] |
 | [777, 1, "z"] | null |
-| [777, 2] | [h'49a202182d63706471f4'] |
+| [777, 2] | [h'a202182d63706471f4'] |
 | [777, 2, 2] | [45] |
 | [777, 2, "pdq"] | [false] |
 | [777, 2, 0] | null |

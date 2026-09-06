@@ -60,7 +60,11 @@ The entire array can be implicitly typed or explicitly typed.
 The first pathspec operates on the root of the CBOR or CBOR sequence document as the parent element.
 The entire CBOR document matches the CBOR Pointer `[]`.
 
-Evaluating a CBOR Pointer returns either an array containing a single valid CBOR element, or returns `null`.
+Successful evaluation of a CBOR Pointer returns the selected CBOR item directly.
+If evaluation does not identify an item, resolution fails.
+Resolution failure is an error condition, not a CBOR value; selecting `null` or `undefined` is a successful evaluation.
+As with JSON Pointer (Section 7 of {{RFC6901}}), applications define how resolution failure is handled.
+This document does not prescribe a CBOR encoding or an API representation for evaluation outcomes.
 
 ## Implicit Pathspecs
 
@@ -77,6 +81,7 @@ The semantics of an implicit pathspec depend on the type of the parent element.
 ## Examples with Implicit Pathspecs
 
 Given the following source document, the table below gives the corresponding result.
+In the table, *failure* indicates resolution failure rather than a CBOR value.
 
 ~~~ cbor-diag
 777([
@@ -103,26 +108,26 @@ Given the following source document, the table below gives the corresponding res
 
 | CBOR Pointer | Result |
 |-----------+--------|
-| `[77]` | `null` |
-| `[777, 3]` | `[27]` |
-| `[777, 9]` | `null` |
-| `[777, null]` | `null` |
-| `[777, 0]` | `[[[1,"two",3],[4,"five",6]]]` |
-| `[777, 0, 1]` | `[[4, "five",6]]` |
-| `[777, 0, 1, 1]` | `["five"]` |
-| `[777, 1, 1]` | `["abc"]` |
-| `[777, 1, -18]` | `[h'1234']` |
-| `[777, 1, -18, 1]` | `null` |
-| `[777, 1, "x"]` | `[null]` |
-| `[777, 1, 35]` | `[1(1760686166)]` |
-| `[777, 1, 35, 1]` | `[1760686166]` |
-| `[777, 1, "y"]` | `[["l","m"]]` |
-| `[777, 1, "y", 1]` | `["m"]` |
-| `[777, 1, "z"]` | `null` |
-| `[777, 2]` | `[h'a202182d63706471f4']` |
-| `[777, 2, 2]` | `[45]` |
-| `[777, 2, "pdq"]` | `[false]` |
-| `[777, 2, 0]` | `null` |
+| `[77]` | *failure* |
+| `[777, 3]` | `27` |
+| `[777, 9]` | *failure* |
+| `[777, null]` | *failure* |
+| `[777, 0]` | `[[1,"two",3],[4,"five",6]]` |
+| `[777, 0, 1]` | `[4, "five",6]` |
+| `[777, 0, 1, 1]` | `"five"` |
+| `[777, 1, 1]` | `"abc"` |
+| `[777, 1, -18]` | `h'1234'` |
+| `[777, 1, -18, 1]` | *failure* |
+| `[777, 1, "x"]` | `null` |
+| `[777, 1, 35]` | `1(1760686166)` |
+| `[777, 1, 35, 1]` | `1760686166` |
+| `[777, 1, "y"]` | `["l","m"]` |
+| `[777, 1, "y", 1]` | `"m"` |
+| `[777, 1, "z"]` | *failure* |
+| `[777, 2]` | `h'a202182d63706471f4'` |
+| `[777, 2, 2]` | `45` |
+| `[777, 2, "pdq"]` | `false` |
+| `[777, 2, 0]` | *failure* |
 
 
 ## Explicit Pathspecs
@@ -152,11 +157,11 @@ TBD1([          # Explicit pathspecs
 ])
 ~~~
 
-Both the implicit and explicit version return the value `["m"]`.
-However, an explicit pathspec tag referring to a different type would return `null`.
+Both the implicit and explicit version return the value `"m"`.
+However, an explicit pathspec tag referring to a different type causes resolution failure.
 Consequently explicit pathspecs are useful where different types could be in the same location and the distinction is semantically meaningful.
 
-Explicit pathspecs involving embedded byte strings require an additional pathspec element. For example, the equivalent of the implicit pointer `[777, 2, 2]` (which returns `[45]`) is the following:
+Explicit pathspecs involving embedded byte strings require an additional pathspec element. For example, the equivalent of the implicit pointer `[777, 2, 2]` (which returns `45`) is the following:
 
 ~~~ cbor-diag
 TBD1([            # Explicit Pathspecs
@@ -178,7 +183,7 @@ TBD1([            # Explicit Pathspecs
 ])
 ~~~
 
-returns `[ {2:45, "pdq":false} ]` as its result.
+returns `{2:45, "pdq":false}` as its result.
 
 
 ## Array Filters {#array-filters}
@@ -201,13 +206,13 @@ TBD6([           # Array Filter
     TBD1([       # Per-element CBOR Pointer
         TBD2(1)  # 2nd Array element
     ]),
-    ["five"]     # value to match per-element pointer result
+    "five"       # value to match per-element pointer result
 ])
 ~~~
 
-If multiple elements or no elements would be returned after evaluating an array filter, the result of the entire array filter is `null`.
+If multiple elements or no elements would be returned after evaluating an array filter, resolution fails.
 
-When evaluating the CBOR Pointer (containing an array filter) below, against the original example, the result is `[6]`:
+When evaluating the CBOR Pointer (containing an array filter) below, against the original example, the result is `6`:
 
 ~~~ cbor-diag
 TBD1([            # Explicit Pathspecs
@@ -217,7 +222,7 @@ TBD1([            # Explicit Pathspecs
       TBD1([        # Per-element CBOR Pointer
         TBD2(1)       # 2nd Array element
       ]),
-      ["five"]      # value to match per-element pointer result
+      "five"        # value to match per-element pointer result
     ]),
     TBD2(2)       # 3rd Array element
 ])

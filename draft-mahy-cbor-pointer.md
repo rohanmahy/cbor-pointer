@@ -135,7 +135,7 @@ In the table, *failure* indicates resolution failure rather than a CBOR value.
 Explicit CBOR Pointers use tags to match a specific type of element for each pathspec.
 If the type of the parent element matches the expected type, the matching rules and return values are the same as for implicit pathspecs, except that in explicit pathspecs, CBOR data items encoded in byte strings are unwrapped in a separate pathspec.
 Explicit CBOR Pointers are always wrapped in the tag `<TBD1>`.
-Each element in an explicit CBOR Pointer is the simple value `<TBD0>` for byte string encoded elements, an array filter tagged with `<TBD6>` as described in {{array-filters}}, or a pathspec tagged with one of the following tags:
+Each element in an explicit CBOR Pointer is either the simple value `<TBD0>` for byte string encoded elements, or a pathspec tagged with one of the following tags:
 
 
 | Data Type | Tag  |
@@ -186,49 +186,6 @@ TBD1([            # Explicit Pathspecs
 returns `{2:45, "pdq":false}` as its result.
 
 
-## Array Filters {#array-filters}
-
-Array filters allow selecting a single array element by evaluating the contents of those elements against another CBOR Pointer. This filter pointer is evaluated against each array element inside the parent element where the filter was invoked, in turn. An array filter is tagged with tag `TBD6`.
-
-For example, if a filter were invoked at the following parent element of our initial example document, the filter pointer is evaluated once for each of the two elements of the parent.
-
-~~~ cbor-diag
-[
-  [1, "two", 3],
-  [4, "five", 6]
-]
-~~~
-
-The CBOR Pointer Filter below selects the entire matching array element under the parent element, where the second element (selected by `TBD1([TBD2(1)])`) matches the value "five":
-
-~~~ cbor-diag
-TBD6([           # Array Filter
-    TBD1([       # Per-element CBOR Pointer
-        TBD2(1)  # 2nd Array element
-    ]),
-    "five"       # value to match per-element pointer result
-])
-~~~
-
-If multiple elements or no elements would be returned after evaluating an array filter, resolution fails.
-
-When evaluating the CBOR Pointer (containing an array filter) below, against the original example, the result is `6`:
-
-~~~ cbor-diag
-TBD1([            # Explicit Pathspecs
-    TBD4(777),    # Tag 777
-    TBD2(0),      # 1st Array element
-    TBD6([        # Array Filter
-      TBD1([        # Per-element CBOR Pointer
-        TBD2(1)       # 2nd Array element
-      ]),
-      "five"        # value to match per-element pointer result
-    ]),
-    TBD2(2)       # 3rd Array element
-])
-~~~
-
-
 # Security Considerations
 
 TODO Security
@@ -236,7 +193,7 @@ TODO Security
 
 # IANA Considerations
 
-TO DO register 6 tags (TBD1 through TBD6) and 1 simple value (TBD0).
+TO DO register 5 tags (TBD1 through TBD5) and 1 simple value (TBD0).
 
 
 --- back

@@ -16,7 +16,6 @@ keyword:
  - pathspec
  - JSON Pointer
  - XPointer
- - CBOR Pointer
 venue:
   group: "Concise Binary Object Representation Maintenance and Extensions"
   type: "Working Group"
@@ -30,6 +29,9 @@ author:
     fullname: Rohan Mahy
     organization:
     email: rohan.ietf@gmail.com
+ -
+    fullname: Nathaniel McCallum
+    email: nathaniel@mccallum.life
 
 normative:
 
@@ -47,7 +49,7 @@ It is analogous to JSON Pointer.
 
 # Introduction
 
-CBOR Pointer is a syntax for identifying a single arbitrary subtree or element of a CBOR {{!RFC8494}} Document or a CBOR sequence.
+CBOR Pointer is a syntax for identifying a single arbitrary subtree or element of a CBOR {{!RFC8949}} Document or a CBOR sequence.
 It provides functionality analogous to JSON Pointer {{?RFC6901}} but supporting the full range of CBOR types.
 
 # Conventions and Definitions
@@ -59,9 +61,35 @@ It provides functionality analogous to JSON Pointer {{?RFC6901}} but supporting 
 A CBOR Pointer is an array consisting of pathspecs.
 The entire array can be implicitly typed or explicitly typed.
 The first pathspec operates on the root of the CBOR or CBOR sequence document as the parent element.
-The entire CBOR document matches the CBOR Pointer `[]`.
+Pathspecs MUST be evaluated in array order, with the item selected by each pathspec becoming the parent element for the next pathspec.
+A pointer with no pathspecs selects the entire CBOR document; this applies to both `[]` and `TBD1([])`.
 
-Evaluating a CBOR Pointer returns either an array containing a single valid CBOR element, or returns `null`.
+Successful evaluation of a CBOR Pointer returns the selected CBOR item directly.
+If evaluation does not identify an item, resolution fails.
+Resolution failure is an error condition, not a CBOR value; selecting `null` or `undefined` is a successful evaluation.
+As with JSON Pointer (Section 7 of {{RFC6901}}), applications define how resolution failure is handled.
+This document does not prescribe a CBOR encoding or an API representation for evaluation outcomes.
+
+If a pathspec cannot select an item according to the rules below, evaluation MUST fail and subsequent pathspecs MUST NOT be evaluated.
+This includes a missing map key, an out-of-range array index, a tag number or explicit parent-type mismatch, or a parent element for which the pathspec has no defined operation.
+An integer, floating-point number, text string, or simple value can be selected as the final result, but applying a further pathspec to it causes resolution failure.
+
+## Pointer Validity
+
+A CBOR Pointer MUST be either an untagged array of implicit pathspecs or an array wrapped in tag `TBD1` containing explicit pathspecs.
+An implicit pathspec can be any CBOR data item, since it can identify a map key.
+An explicit pathspec MUST be one of the forms defined in {{explicit-pathspecs}}, with the specified tag content type.
+Any other explicit pathspec, including an unknown pathspec tag, is invalid.
+These restrictions apply to the pathspec itself, not to tags or other items inside a map key.
+
+Pointer validity is independent of the document being evaluated and of whether evaluation reaches a particular pathspec.
+Invalid pointer syntax is an error condition distinct from resolution failure, as in Section 7 of {{RFC6901}}.
+Applications define how these error conditions are reported.
+An evaluator MAY stop at the first detected error; it is not required to validate the entire pointer before evaluation or to discover every error.
+
+For example, `TBD1([TBD3("missing"), TBD2("first")])` is invalid because `"first"` is not an integer index, whether or not the first lookup succeeds.
+In contrast, `TBD1([TBD2(100)])` is syntactically valid but fails to resolve when applied to an array with fewer than 101 elements.
+The implicit pointer `["first"]` is also syntactically valid: it can select a map entry, but fails to resolve when applied to an array.
 
 ## Implicit Pathspecs
 
@@ -69,15 +97,44 @@ The semantics of an implicit pathspec depend on the type of the parent element.
 
 - If the parent element is an array, it returns the appropriate element:
   - if the pathspec is an unsigned integer, it matches the element at that zero-based position from the start of the array;
-  - if the pathspec is a CBOR negative integer, hexadecimal 0x20 matches the last element of the array, with higher numbers moving backwards through the array
-- If the parent element is a map, the pathspec matches if it matches one of the map keys of the map. It returns the value of the map key.
+  - if the pathspec is a CBOR negative integer `i` and the array has `n` elements, it matches the element at zero-based position `n + i`, provided `0 <= n + i < n`; thus, `-1` matches the last element, `-2` the second-to-last element, and so on.
+- If the parent element is a map, the pathspec identifies a key using the comparison rules in {{map-lookup}}. It returns the value associated with that key.
 - If the parent element is a tag, the pathspec matches if it matches the tag number. It returns the value inside the tag.
-- If the parent element is a byte string, the parent element is re-evaluated as embedded CBOR. The pathspec is evaluated as above if the type after byte string decoding is an array, map, or tag.
-- If the root element is a CBOR sequence, and the pathspec is evaluated as if the entire sequence were wrapped in an array.
+- If the parent element is a byte string, one layer of embedded CBOR is decoded as described in {{embedded-cbor}}. The same pathspec is then evaluated against the decoded item if it is an array, map, or tag; otherwise, resolution fails.
+- If the root element is a CBOR sequence, the pathspec is evaluated as if the entire sequence were wrapped in an array.
+
+## Map Lookup {#map-lookup}
+
+Implicit and explicit map lookups MUST compare keys using the generic data model key-equivalence rules in Section 5.6.1 of {{RFC8949}}.
+Comparison is between CBOR values, not their serialized bytes or a programming language's native key representations.
+For example, the integer `1` and the floating-point number `1.0` are distinct keys, while floating-point `0.0` and `-0.0` are equivalent keys.
+Different encodings of the same integer identify the same key.
+These rules also apply recursively to compound keys.
+
+Map lookup requires a valid CBOR map with unique keys under these equivalence rules.
+Duplicate keys violate the CBOR map model (Section 5.6 of {{RFC8949}}).
+An implementation that detects them MUST report an invalid-map error rather than select one of the entries.
+Validation MAY be performed before pointer evaluation; an evaluator need not repeat checks already performed by a validating decoder.
+A decoder that silently discards duplicate entries does not establish that the input map was valid.
+These requirements do not require validating unrelated branches of the document before lookup.
+
+The following examples distinguish resolution failure from an invalid input map:
+
+| Source Item | CBOR Pointer | Result |
+|-------------+--------------+--------|
+| `{1: "integer", 1.0: "float"}` | `[1]` | `"integer"` |
+| `{1: "integer", 1.0: "float"}` | `[1.0]` | `"float"` |
+| `{1: "integer", 1.0: "float"}` | `["1"]` | *failure* |
+| `{0.0: "zero"}` | `[-0.0]` | `"zero"` |
+| `{"x": 10, "x": 20}` | `["x"]` | *invalid map* |
+
+For the first source item, the byte sequences `81 01` and `81 18 01` both encode the pointer `[1]` and select `"integer"`.
+The different integer encodings do not change the lookup result.
 
 ## Examples with Implicit Pathspecs
 
 Given the following source document, the table below gives the corresponding result.
+In the table, *failure* indicates resolution failure rather than a CBOR value.
 
 ~~~ cbor-diag
 777([
@@ -104,42 +161,45 @@ Given the following source document, the table below gives the corresponding res
 
 | CBOR Pointer | Result |
 |-----------+--------|
-| [77]      | null |
-| [777, 3]  | [27] |
-| [777, 9]  | null |
-| [777, null] | null |
-| [777, 0] | [[[1,"two",3],[4,"five",6]]] |
-| [777, 0, 1] | [[4, "five",6]] |
-| [777, 0, 1, 1] | ["five"] |
-| [777, 1, 1] | ["abc"] |
-| [777, 1, -18] | [h'1234'] |
-| [777, 1, -18, 1] | null |
-| [777, 1, "x"] | [null] |
-| [777, 1, 35] | [1(1760686166)] |
-| [777, 1, 35, 1] | [1760686166] |
-| [777, 1, "y"] | [["l","m"]] |
-| [777, 1, "y", 1] | ["m"] |
-| [777, 1, "z"] | null |
-| [777, 2] | [h'49a202182d63706471f4'] |
-| [777, 2, 2] | [45] |
-| [777, 2, "pdq"] | [false] |
-| [777, 2, 0] | null |
+| `[77]` | *failure* |
+| `[777, 3]` | `27` |
+| `[777, 3, 0]` | *failure* |
+| `[777, 9]` | *failure* |
+| `[777, 9, 0]` | *failure* |
+| `[777, null]` | *failure* |
+| `[777, 0]` | `[[1,"two",3],[4,"five",6]]` |
+| `[777, 0, 1]` | `[4, "five",6]` |
+| `[777, 0, 1, 1]` | `"five"` |
+| `[777, 1, 1]` | `"abc"` |
+| `[777, 1, -18]` | `h'1234'` |
+| `[777, 1, -18, 1]` | *failure* |
+| `[777, 1, "x"]` | `null` |
+| `[777, 1, "x", 0]` | *failure* |
+| `[777, 1, 35]` | `1(1760686166)` |
+| `[777, 1, 35, 1]` | `1760686166` |
+| `[777, 1, "y"]` | `["l","m"]` |
+| `[777, 1, "y", 1]` | `"m"` |
+| `[777, 1, "z"]` | *failure* |
+| `[777, 2]` | `h'a202182d63706471f4'` |
+| `[777, 2, 2]` | `45` |
+| `[777, 2, "pdq"]` | `false` |
+| `[777, 2, 0]` | *failure* |
 
 
-## Explicit Pathspecs
+## Explicit Pathspecs {#explicit-pathspecs}
 
 Explicit CBOR Pointers use tags to match a specific type of element for each pathspec.
-If the type of the parent element matches the expected type, the matching rules and return values are the same as for implicit pathspecs, except that in explicit pathspecs, byte string encoded strings are unwrapped in a separate pathspec.
+If the type of the parent element matches the expected type, the matching rules and return values are the same as for implicit pathspecs, except that in explicit pathspecs, CBOR data items encoded in byte strings are unwrapped in a separate pathspec.
 Explicit CBOR Pointers are always wrapped in the tag `<TBD1>`.
 Each element in an explicit CBOR Pointer is either the simple value `<TBD0>` for byte string encoded elements, or a pathspec tagged with one of the following tags:
 
 
-| Data Type | Tag  |
-|-----------+------|
-| array     | TBD2 |
-| map       | TBD3 |
-| tag       | TBD4 |
-| sequence  | TBD5 |
+| Data Type | Tag  | Tag Content |
+|-----------+------+-------------|
+| array     | TBD2 | Unsigned or negative integer (major type 0 or 1) |
+| map       | TBD3 | Any CBOR data item identifying the map key |
+| tag       | TBD4 | Unsigned integer (major type 0) identifying the tag number |
+| sequence  | TBD5 | Unsigned or negative integer (major type 0 or 1) |
 
 
 Converting one of our implicit pathspec examples (`[777, 1, "y", 1]`) into explicit pathspecs, gives us:
@@ -149,15 +209,15 @@ TBD1([          # Explicit pathspecs
     TBD4(777),  # Tag 777
     TBD2(1),    # 2nd Array element
     TBD3("y"),  # Map key "y"
-    TBD(1)      # 2nd Array element
+    TBD2(1)     # 2nd Array element
 ])
 ~~~
 
-Both the implicit and explicit version return the value `["m"]`.
-However, an explicit pathspec tag referring to a different type would return `null`.
+Both the implicit and explicit version return the value `"m"`.
+However, an explicit pathspec tag referring to a different type causes resolution failure.
 Consequently explicit pathspecs are useful where different types could be in the same location and the distinction is semantically meaningful.
 
-Explicit pathspecs involving embedded byte strings require an additional pathspec element. For example, the equivalent of the implicit pointer `[777, 2, 2]` (which returns `[45]`) is the following:
+Explicit pathspecs involving embedded byte strings require an additional pathspec element. For example, the equivalent of the implicit pointer `[777, 2, 2]` (which returns `45`) is the following:
 
 ~~~ cbor-diag
 TBD1([            # Explicit Pathspecs
@@ -179,60 +239,96 @@ TBD1([            # Explicit Pathspecs
 ])
 ~~~
 
-returns `[ {2:45, "pdq":false} ]` as its result.
+returns `{2:45, "pdq":false}` as its result.
 
+## Embedded CBOR {#embedded-cbor}
 
-## Array Filters
+When a pathspec decodes a byte string as embedded CBOR, the byte string MUST contain exactly one complete, valid CBOR data item, and decoding MUST consume all of its contents.
+Empty contents, invalid or incomplete CBOR, or any bytes following the encoded item cause resolution failure.
+This operation does not decode a CBOR sequence containing multiple items.
 
-Array filters allow selecting a single array element by evaluating the contents of those elements against another CBOR Pointer. This filter pointer is evaluated against each array element inside the parent element where the filter was invoked, in turn. An array filter is tagged with tag `TBD6`.
+The explicit pathspec `simple(TBD0)` requires a byte string parent and selects the decoded item, regardless of its type.
+Applying it to any other parent type causes resolution failure.
+Each decoding operation unwraps exactly one byte string layer.
+If the decoded item is itself a byte string, another `simple(TBD0)` pathspec is needed to decode its contents.
 
-For example, if a filter were invoked at the following parent element of our initial example document, the filter pointer is evaluated once for each of the two elements of the parent.
+An implicit pathspec decodes one layer and then applies that same pathspec to the decoded array, map, or tag.
+It does not recursively decode a second byte string layer or select a decoded scalar item.
+A pointer that ends at a byte string selects that byte string unchanged; its contents are not decoded or validated as embedded CBOR.
 
-~~~ cbor-diag
-[
-  [1, "two", 3],
-  [4, "five", 6]
-]
-~~~
+The following examples use each source item as the root document.
+As above, *failure* indicates resolution failure.
 
-The CBOR Pointer Filter below selects the entire matching array element under the parent element, where the second element (`[TBD2(1)]`) matches the value "five":
-
-~~~ cbor-diag
-TBD6([           # Array Filter
-    [            # Per-element CBOR Pointer
-        TBD2(1)  # 2nd Array element
-    ],
-    ["five"]     # value to match per-element pointer result
-])
-~~~
-
-If multiple elements or no elements would be returned after evaluating an array filter, the result of the entire array filter is `null`.
-
-When evaluating the CBOR Pointer (containing an array filter) below, against the original example, the result is `[6]`:
-
-~~~ cbor-diag
-TBD1([            # Explicit Pathspecs
-    TBD4(777),    # Tag 777
-    TBD2(0),      # 1st Array element
-    TBD6([        # Array Filter
-      [             # Per-element CBOR Pointer
-        TBD2(1)       # 2nd Array element
-      ],
-      ["five"]      # value to match per-element pointer result
-    ]),
-    TBD2(2)       # 3rd Array element
-])
-~~~
+| Source Item | CBOR Pointer | Result |
+|-------------+--------------+--------|
+| `h'181b'` | `[]` | `h'181b'` |
+| `h'181b'` | `TBD1([simple(TBD0)])` | `27` |
+| `h'181b'` | `[0]` | *failure* |
+| `h'81181b'` | `[0]` | `27` |
+| `h'42181b'` | `TBD1([simple(TBD0)])` | `h'181b'` |
+| `h'42181b'` | `TBD1([simple(TBD0), simple(TBD0)])` | `27` |
+| `h'42181b'` | `[0]` | *failure* |
+| `h''` | `TBD1([simple(TBD0)])` | *failure* |
+| `h'18'` | `TBD1([simple(TBD0)])` | *failure* |
+| `h'0001'` | `TBD1([simple(TBD0)])` | *failure* |
+| `27` | `TBD1([simple(TBD0)])` | *failure* |
 
 
 # Security Considerations
 
-TODO Security
+The security considerations in Section 10 of {{RFC8949}} apply to both the source document and the CBOR Pointer.
+Both can contain untrusted data.
+
+Long pointers, large maps, deeply nested compound keys, and embedded CBOR decoding can consume substantial processing time and memory.
+Implementations SHOULD enforce resource limits appropriate to their environment, including limits on pointer length, nesting depth, and total evaluation work.
+If a limit prevents evaluation from completing, the implementation MUST report an error rather than treat an incomplete search as evidence that an item is absent.
+
+CBOR indices can exceed the range of an implementation's native integer types.
+Index conversion and arithmetic, including the calculation of `n + i` for negative indices, MUST NOT overflow or silently truncate values.
+Implementations MUST check that the resulting position is in bounds before accessing an element.
+
+Duplicate keys can cause a validator and a consumer to select different values from the same encoded map if their decoders retain different entries.
+Applications using pointer results for authorization or integrity checks need consistent interpretation during validation and consumption.
+The key-equivalence and duplicate-key rules in {{map-lookup}} apply; silently discarding duplicates or collapsing distinct CBOR key types can defeat those rules.
+Implementations need to preserve complete text and byte-string keys, including embedded NULs, rather than truncate them at a string terminator.
+
+Different pointers can select the same location through negative or nonnegative indices, implicit or explicit pathspecs, or alternative CBOR encodings.
+Blocking one pointer representation does not prevent access through another.
+Applications that use pointers for authorization need to check the selected location against their access policy, accounting for these alternative representations.
+
+
+Embedded decoding introduces another CBOR item that requires parsing and validation.
+The same resource limits and validity checks apply to embedded items, including duplicate-key checks for maps used in lookup.
+Limits on total evaluation work should account for all decoding steps, rather than reset for each embedded item.
 
 
 # IANA Considerations
 
-TO DO register 6 tags (TBD1 through TBD6) and 1 simple value (TBD0).
+IANA is requested to register one CBOR simple value and five CBOR tags as described below.
+References in the tables identify sections of this document.
+
+RFC Editor: Replace `TBD0` through `TBD5` throughout this document with the assigned values and remove this paragraph before publication.
+
+## CBOR Simple Value
+
+IANA is requested to add the following entry to the "CBOR Simple Values" registry established by Section 9.1 of {{RFC8949}}.
+
+| Value | Semantics | Reference |
+|-------+-----------+-----------|
+| TBD0 | Decode a byte string as one embedded CBOR item in an explicit CBOR Pointer | {{embedded-cbor}} |
+
+## CBOR Tags
+
+IANA is requested to add the following entries to the "CBOR Tags" registry established by Section 9.2 of {{RFC8949}}.
+The point of contact for these registrations is Rohan Mahy (rohan.ietf@gmail.com).
+
+| Tag | Data Item | Semantics | Reference |
+|-----+-----------+-----------+-----------|
+| TBD1 | array | Explicit CBOR Pointer | {{explicit-pathspecs}} |
+| TBD2 | unsigned or negative integer | Array element selection in an explicit CBOR Pointer | {{explicit-pathspecs}} |
+| TBD3 | any | Map value selection by key in an explicit CBOR Pointer | {{explicit-pathspecs}} |
+| TBD4 | unsigned integer | Tag content selection in an explicit CBOR Pointer | {{explicit-pathspecs}} |
+| TBD5 | unsigned or negative integer | Sequence item selection in an explicit CBOR Pointer | {{explicit-pathspecs}} |
 
 
 --- back

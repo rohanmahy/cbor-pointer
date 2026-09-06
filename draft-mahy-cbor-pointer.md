@@ -301,7 +301,31 @@ Limits on total evaluation work should account for all decoding steps, rather th
 
 # IANA Considerations
 
-TO DO register 5 tags (TBD1 through TBD5) and 1 simple value (TBD0).
+IANA is requested to register one CBOR simple value and five CBOR tags as described below.
+References in the tables identify sections of this document.
+
+RFC Editor: Replace `TBD0` through `TBD5` throughout this document with the assigned values and remove this paragraph before publication.
+
+## CBOR Simple Value
+
+IANA is requested to add the following entry to the "CBOR Simple Values" registry established by Section 9.1 of {{RFC8949}}.
+
+| Value | Semantics | Reference |
+|-------+-----------+-----------|
+| TBD0 | Decode a byte string as one embedded CBOR item in an explicit CBOR Pointer | {{embedded-cbor}} |
+
+## CBOR Tags
+
+IANA is requested to add the following entries to the "CBOR Tags" registry established by Section 9.2 of {{RFC8949}}.
+The point of contact for these registrations is Rohan Mahy (rohan.ietf@gmail.com).
+
+| Tag | Data Item | Semantics | Reference |
+|-----+-----------+-----------+-----------|
+| TBD1 | array | Explicit CBOR Pointer | {{explicit-pathspecs}} |
+| TBD2 | unsigned or negative integer | Array element selection in an explicit CBOR Pointer | {{explicit-pathspecs}} |
+| TBD3 | any | Map value selection by key in an explicit CBOR Pointer | {{explicit-pathspecs}} |
+| TBD4 | unsigned integer | Tag content selection in an explicit CBOR Pointer | {{explicit-pathspecs}} |
+| TBD5 | unsigned or negative integer | Sequence item selection in an explicit CBOR Pointer | {{explicit-pathspecs}} |
 
 
 --- back

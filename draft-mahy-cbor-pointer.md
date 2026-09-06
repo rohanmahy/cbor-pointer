@@ -16,7 +16,6 @@ keyword:
  - pathspec
  - JSON Pointer
  - XPointer
- - CBOR Pointer
 venue:
   group: "Concise Binary Object Representation Maintenance and Extensions"
   type: "Working Group"
@@ -73,7 +72,7 @@ The semantics of an implicit pathspec depend on the type of the parent element.
 - If the parent element is a map, the pathspec matches if it matches one of the map keys of the map. It returns the value of the map key.
 - If the parent element is a tag, the pathspec matches if it matches the tag number. It returns the value inside the tag.
 - If the parent element is a byte string, the parent element is re-evaluated as embedded CBOR. The pathspec is evaluated as above if the type after byte string decoding is an array, map, or tag.
-- If the root element is a CBOR sequence, and the pathspec is evaluated as if the entire sequence were wrapped in an array.
+- If the root element is a CBOR sequence, the pathspec is evaluated as if the entire sequence were wrapped in an array.
 
 ## Examples with Implicit Pathspecs
 
@@ -129,7 +128,7 @@ Given the following source document, the table below gives the corresponding res
 ## Explicit Pathspecs
 
 Explicit CBOR Pointers use tags to match a specific type of element for each pathspec.
-If the type of the parent element matches the expected type, the matching rules and return values are the same as for implicit pathspecs, except that in explicit pathspecs, byte string encoded strings are unwrapped in a separate pathspec.
+If the type of the parent element matches the expected type, the matching rules and return values are the same as for implicit pathspecs, except that in explicit pathspecs, CBOR data items encoded in byte strings are unwrapped in a separate pathspec.
 Explicit CBOR Pointers are always wrapped in the tag `<TBD1>`.
 Each element in an explicit CBOR Pointer is either the simple value `<TBD0>` for byte string encoded elements, or a pathspec tagged with one of the following tags:
 

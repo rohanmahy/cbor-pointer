@@ -149,7 +149,7 @@ TBD1([          # Explicit pathspecs
     TBD4(777),  # Tag 777
     TBD2(1),    # 2nd Array element
     TBD3("y"),  # Map key "y"
-    TBD(1)      # 2nd Array element
+    TBD2(1)     # 2nd Array element
 ])
 ~~~
 

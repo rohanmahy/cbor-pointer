@@ -68,7 +68,7 @@ The semantics of an implicit pathspec depend on the type of the parent element.
 
 - If the parent element is an array, it returns the appropriate element:
   - if the pathspec is an unsigned integer, it matches the element at that zero-based position from the start of the array;
-  - if the pathspec is a CBOR negative integer, hexadecimal 0x20 matches the last element of the array, with higher numbers moving backwards through the array
+  - if the pathspec is a CBOR negative integer `i` and the array has `n` elements, it matches the element at zero-based position `n + i`, provided `0 <= n + i < n`; thus, `-1` matches the last element, `-2` the second-to-last element, and so on.
 - If the parent element is a map, the pathspec matches if it matches one of the map keys of the map. It returns the value of the map key.
 - If the parent element is a tag, the pathspec matches if it matches the tag number. It returns the value inside the tag.
 - If the parent element is a byte string, the parent element is re-evaluated as embedded CBOR. The pathspec is evaluated as above if the type after byte string decoding is an array, map, or tag.

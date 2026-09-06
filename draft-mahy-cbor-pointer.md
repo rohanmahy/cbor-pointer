@@ -58,13 +58,18 @@ It provides functionality analogous to JSON Pointer {{?RFC6901}} but supporting 
 A CBOR Pointer is an array consisting of pathspecs.
 The entire array can be implicitly typed or explicitly typed.
 The first pathspec operates on the root of the CBOR or CBOR sequence document as the parent element.
-The entire CBOR document matches the CBOR Pointer `[]`.
+Pathspecs MUST be evaluated in array order, with the item selected by each pathspec becoming the parent element for the next pathspec.
+A pointer with no pathspecs selects the entire CBOR document; this applies to both `[]` and `TBD1([])`.
 
 Successful evaluation of a CBOR Pointer returns the selected CBOR item directly.
 If evaluation does not identify an item, resolution fails.
 Resolution failure is an error condition, not a CBOR value; selecting `null` or `undefined` is a successful evaluation.
 As with JSON Pointer (Section 7 of {{RFC6901}}), applications define how resolution failure is handled.
 This document does not prescribe a CBOR encoding or an API representation for evaluation outcomes.
+
+If a pathspec cannot select an item according to the rules below, evaluation MUST fail and subsequent pathspecs MUST NOT be evaluated.
+This includes a missing map key, an out-of-range array index, a tag number or explicit parent-type mismatch, or a parent element for which the pathspec has no defined operation.
+An integer, floating-point number, text string, or simple value can be selected as the final result, but applying a further pathspec to it causes resolution failure.
 
 ## Implicit Pathspecs
 
@@ -110,7 +115,9 @@ In the table, *failure* indicates resolution failure rather than a CBOR value.
 |-----------+--------|
 | `[77]` | *failure* |
 | `[777, 3]` | `27` |
+| `[777, 3, 0]` | *failure* |
 | `[777, 9]` | *failure* |
+| `[777, 9, 0]` | *failure* |
 | `[777, null]` | *failure* |
 | `[777, 0]` | `[[1,"two",3],[4,"five",6]]` |
 | `[777, 0, 1]` | `[4, "five",6]` |
@@ -119,6 +126,7 @@ In the table, *failure* indicates resolution failure rather than a CBOR value.
 | `[777, 1, -18]` | `h'1234'` |
 | `[777, 1, -18, 1]` | *failure* |
 | `[777, 1, "x"]` | `null` |
+| `[777, 1, "x", 0]` | *failure* |
 | `[777, 1, 35]` | `1(1760686166)` |
 | `[777, 1, 35, 1]` | `1760686166` |
 | `[777, 1, "y"]` | `["l","m"]` |

@@ -273,7 +273,30 @@ As above, *failure* indicates resolution failure.
 
 # Security Considerations
 
-TODO Security
+The security considerations in Section 10 of {{RFC8949}} apply to both the source document and the CBOR Pointer.
+Both can contain untrusted data.
+
+Long pointers, large maps, deeply nested compound keys, and embedded CBOR decoding can consume substantial processing time and memory.
+Implementations SHOULD enforce resource limits appropriate to their environment, including limits on pointer length, nesting depth, and total evaluation work.
+If a limit prevents evaluation from completing, the implementation MUST report an error rather than treat an incomplete search as evidence that an item is absent.
+
+CBOR indices can exceed the range of an implementation's native integer types.
+Index conversion and arithmetic, including the calculation of `n + i` for negative indices, MUST NOT overflow or silently truncate values.
+Implementations MUST check that the resulting position is in bounds before accessing an element.
+
+Duplicate keys can cause a validator and a consumer to select different values from the same encoded map if their decoders retain different entries.
+Applications using pointer results for authorization or integrity checks need consistent interpretation during validation and consumption.
+The key-equivalence and duplicate-key rules in {{map-lookup}} apply; silently discarding duplicates or collapsing distinct CBOR key types can defeat those rules.
+Implementations need to preserve complete text and byte-string keys, including embedded NULs, rather than truncate them at a string terminator.
+
+Different pointers can select the same location through negative or nonnegative indices, implicit or explicit pathspecs, or alternative CBOR encodings.
+Blocking one pointer representation does not prevent access through another.
+Applications that use pointers for authorization need to check the selected location against their access policy, accounting for these alternative representations.
+
+
+Embedded decoding introduces another CBOR item that requires parsing and validation.
+The same resource limits and validity checks apply to embedded items, including duplicate-key checks for maps used in lookup.
+Limits on total evaluation work should account for all decoding steps, rather than reset for each embedded item.
 
 
 # IANA Considerations

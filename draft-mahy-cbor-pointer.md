@@ -71,6 +71,23 @@ If a pathspec cannot select an item according to the rules below, evaluation MUS
 This includes a missing map key, an out-of-range array index, a tag number or explicit parent-type mismatch, or a parent element for which the pathspec has no defined operation.
 An integer, floating-point number, text string, or simple value can be selected as the final result, but applying a further pathspec to it causes resolution failure.
 
+## Pointer Validity
+
+A CBOR Pointer MUST be either an untagged array of implicit pathspecs or an array wrapped in tag `TBD1` containing explicit pathspecs.
+An implicit pathspec can be any CBOR data item, since it can identify a map key.
+An explicit pathspec MUST be one of the forms defined in {{explicit-pathspecs}}, with the specified tag content type.
+Any other explicit pathspec, including an unknown pathspec tag, is invalid.
+These restrictions apply to the pathspec itself, not to tags or other items inside a map key.
+
+Pointer validity is independent of the document being evaluated and of whether evaluation reaches a particular pathspec.
+Invalid pointer syntax is an error condition distinct from resolution failure, as in Section 7 of {{RFC6901}}.
+Applications define how these error conditions are reported.
+An evaluator MAY stop at the first detected error; it is not required to validate the entire pointer before evaluation or to discover every error.
+
+For example, `TBD1([TBD3("missing"), TBD2("first")])` is invalid because `"first"` is not an integer index, whether or not the first lookup succeeds.
+In contrast, `TBD1([TBD2(100)])` is syntactically valid but fails to resolve when applied to an array with fewer than 101 elements.
+The implicit pointer `["first"]` is also syntactically valid: it can select a map entry, but fails to resolve when applied to an array.
+
 ## Implicit Pathspecs
 
 The semantics of an implicit pathspec depend on the type of the parent element.
@@ -138,7 +155,7 @@ In the table, *failure* indicates resolution failure rather than a CBOR value.
 | `[777, 2, 0]` | *failure* |
 
 
-## Explicit Pathspecs
+## Explicit Pathspecs {#explicit-pathspecs}
 
 Explicit CBOR Pointers use tags to match a specific type of element for each pathspec.
 If the type of the parent element matches the expected type, the matching rules and return values are the same as for implicit pathspecs, except that in explicit pathspecs, CBOR data items encoded in byte strings are unwrapped in a separate pathspec.
@@ -146,12 +163,12 @@ Explicit CBOR Pointers are always wrapped in the tag `<TBD1>`.
 Each element in an explicit CBOR Pointer is either the simple value `<TBD0>` for byte string encoded elements, or a pathspec tagged with one of the following tags:
 
 
-| Data Type | Tag  |
-|-----------+------|
-| array     | TBD2 |
-| map       | TBD3 |
-| tag       | TBD4 |
-| sequence  | TBD5 |
+| Data Type | Tag  | Tag Content |
+|-----------+------+-------------|
+| array     | TBD2 | Unsigned or negative integer (major type 0 or 1) |
+| map       | TBD3 | Any CBOR data item identifying the map key |
+| tag       | TBD4 | Unsigned integer (major type 0) identifying the tag number |
+| sequence  | TBD5 | Unsigned or negative integer (major type 0 or 1) |
 
 
 Converting one of our implicit pathspec examples (`[777, 1, "y", 1]`) into explicit pathspecs, gives us:

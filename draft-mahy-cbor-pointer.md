@@ -29,6 +29,9 @@ author:
     fullname: Rohan Mahy
     organization:
     email: rohan.ietf@gmail.com
+ -
+    fullname: Nathaniel McCallum
+    email: nathaniel@mccallum.life
 
 normative:
 

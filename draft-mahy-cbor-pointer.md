@@ -16,7 +16,6 @@ keyword:
  - pathspec
  - JSON Pointer
  - XPointer
- - CBOR Pointer
 venue:
   group: "Concise Binary Object Representation Maintenance and Extensions"
   type: "Working Group"
@@ -47,7 +46,7 @@ It is analogous to JSON Pointer.
 
 # Introduction
 
-CBOR Pointer is a syntax for identifying a single arbitrary subtree or element of a CBOR {{!RFC8494}} Document or a CBOR sequence.
+CBOR Pointer is a syntax for identifying a single arbitrary subtree or element of a CBOR {{!RFC8949}} Document or a CBOR sequence.
 It provides functionality analogous to JSON Pointer {{?RFC6901}} but supporting the full range of CBOR types.
 
 # Conventions and Definitions
@@ -69,11 +68,11 @@ The semantics of an implicit pathspec depend on the type of the parent element.
 
 - If the parent element is an array, it returns the appropriate element:
   - if the pathspec is an unsigned integer, it matches the element at that zero-based position from the start of the array;
-  - if the pathspec is a CBOR negative integer, hexadecimal 0x20 matches the last element of the array, with higher numbers moving backwards through the array
+  - if the pathspec is a CBOR negative integer `i` and the array has `n` elements, it matches the element at zero-based position `n + i`, provided `0 <= n + i < n`; thus, `-1` matches the last element, `-2` the second-to-last element, and so on.
 - If the parent element is a map, the pathspec matches if it matches one of the map keys of the map. It returns the value of the map key.
 - If the parent element is a tag, the pathspec matches if it matches the tag number. It returns the value inside the tag.
 - If the parent element is a byte string, the parent element is re-evaluated as embedded CBOR. The pathspec is evaluated as above if the type after byte string decoding is an array, map, or tag.
-- If the root element is a CBOR sequence, and the pathspec is evaluated as if the entire sequence were wrapped in an array.
+- If the root element is a CBOR sequence, the pathspec is evaluated as if the entire sequence were wrapped in an array.
 
 ## Examples with Implicit Pathspecs
 
@@ -104,34 +103,34 @@ Given the following source document, the table below gives the corresponding res
 
 | CBOR Pointer | Result |
 |-----------+--------|
-| [77]      | null |
-| [777, 3]  | [27] |
-| [777, 9]  | null |
-| [777, null] | null |
-| [777, 0] | [[[1,"two",3],[4,"five",6]]] |
-| [777, 0, 1] | [[4, "five",6]] |
-| [777, 0, 1, 1] | ["five"] |
-| [777, 1, 1] | ["abc"] |
-| [777, 1, -18] | [h'1234'] |
-| [777, 1, -18, 1] | null |
-| [777, 1, "x"] | [null] |
-| [777, 1, 35] | [1(1760686166)] |
-| [777, 1, 35, 1] | [1760686166] |
-| [777, 1, "y"] | [["l","m"]] |
-| [777, 1, "y", 1] | ["m"] |
-| [777, 1, "z"] | null |
-| [777, 2] | [h'49a202182d63706471f4'] |
-| [777, 2, 2] | [45] |
-| [777, 2, "pdq"] | [false] |
-| [777, 2, 0] | null |
+| `[77]` | `null` |
+| `[777, 3]` | `[27]` |
+| `[777, 9]` | `null` |
+| `[777, null]` | `null` |
+| `[777, 0]` | `[[[1,"two",3],[4,"five",6]]]` |
+| `[777, 0, 1]` | `[[4, "five",6]]` |
+| `[777, 0, 1, 1]` | `["five"]` |
+| `[777, 1, 1]` | `["abc"]` |
+| `[777, 1, -18]` | `[h'1234']` |
+| `[777, 1, -18, 1]` | `null` |
+| `[777, 1, "x"]` | `[null]` |
+| `[777, 1, 35]` | `[1(1760686166)]` |
+| `[777, 1, 35, 1]` | `[1760686166]` |
+| `[777, 1, "y"]` | `[["l","m"]]` |
+| `[777, 1, "y", 1]` | `["m"]` |
+| `[777, 1, "z"]` | `null` |
+| `[777, 2]` | `[h'a202182d63706471f4']` |
+| `[777, 2, 2]` | `[45]` |
+| `[777, 2, "pdq"]` | `[false]` |
+| `[777, 2, 0]` | `null` |
 
 
 ## Explicit Pathspecs
 
 Explicit CBOR Pointers use tags to match a specific type of element for each pathspec.
-If the type of the parent element matches the expected type, the matching rules and return values are the same as for implicit pathspecs, except that in explicit pathspecs, byte string encoded strings are unwrapped in a separate pathspec.
+If the type of the parent element matches the expected type, the matching rules and return values are the same as for implicit pathspecs, except that in explicit pathspecs, CBOR data items encoded in byte strings are unwrapped in a separate pathspec.
 Explicit CBOR Pointers are always wrapped in the tag `<TBD1>`.
-Each element in an explicit CBOR Pointer is either the simple value `<TBD0>` for byte string encoded elements, or a pathspec tagged with one of the following tags:
+Each element in an explicit CBOR Pointer is the simple value `<TBD0>` for byte string encoded elements, an array filter tagged with `<TBD6>` as described in {{array-filters}}, or a pathspec tagged with one of the following tags:
 
 
 | Data Type | Tag  |
@@ -149,7 +148,7 @@ TBD1([          # Explicit pathspecs
     TBD4(777),  # Tag 777
     TBD2(1),    # 2nd Array element
     TBD3("y"),  # Map key "y"
-    TBD(1)      # 2nd Array element
+    TBD2(1)     # 2nd Array element
 ])
 ~~~
 
@@ -182,7 +181,7 @@ TBD1([            # Explicit Pathspecs
 returns `[ {2:45, "pdq":false} ]` as its result.
 
 
-## Array Filters
+## Array Filters {#array-filters}
 
 Array filters allow selecting a single array element by evaluating the contents of those elements against another CBOR Pointer. This filter pointer is evaluated against each array element inside the parent element where the filter was invoked, in turn. An array filter is tagged with tag `TBD6`.
 
@@ -195,13 +194,13 @@ For example, if a filter were invoked at the following parent element of our ini
 ]
 ~~~
 
-The CBOR Pointer Filter below selects the entire matching array element under the parent element, where the second element (`[TBD2(1)]`) matches the value "five":
+The CBOR Pointer Filter below selects the entire matching array element under the parent element, where the second element (selected by `TBD1([TBD2(1)])`) matches the value "five":
 
 ~~~ cbor-diag
 TBD6([           # Array Filter
-    [            # Per-element CBOR Pointer
+    TBD1([       # Per-element CBOR Pointer
         TBD2(1)  # 2nd Array element
-    ],
+    ]),
     ["five"]     # value to match per-element pointer result
 ])
 ~~~
@@ -215,9 +214,9 @@ TBD1([            # Explicit Pathspecs
     TBD4(777),    # Tag 777
     TBD2(0),      # 1st Array element
     TBD6([        # Array Filter
-      [             # Per-element CBOR Pointer
+      TBD1([        # Per-element CBOR Pointer
         TBD2(1)       # 2nd Array element
-      ],
+      ]),
       ["five"]      # value to match per-element pointer result
     ]),
     TBD2(2)       # 3rd Array element

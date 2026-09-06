@@ -97,7 +97,7 @@ The semantics of an implicit pathspec depend on the type of the parent element.
   - if the pathspec is a CBOR negative integer `i` and the array has `n` elements, it matches the element at zero-based position `n + i`, provided `0 <= n + i < n`; thus, `-1` matches the last element, `-2` the second-to-last element, and so on.
 - If the parent element is a map, the pathspec matches if it matches one of the map keys of the map. It returns the value of the map key.
 - If the parent element is a tag, the pathspec matches if it matches the tag number. It returns the value inside the tag.
-- If the parent element is a byte string, the parent element is re-evaluated as embedded CBOR. The pathspec is evaluated as above if the type after byte string decoding is an array, map, or tag.
+- If the parent element is a byte string, one layer of embedded CBOR is decoded as described in {{embedded-cbor}}. The same pathspec is then evaluated against the decoded item if it is an array, map, or tag; otherwise, resolution fails.
 - If the root element is a CBOR sequence, the pathspec is evaluated as if the entire sequence were wrapped in an array.
 
 ## Examples with Implicit Pathspecs
@@ -209,6 +209,38 @@ TBD1([            # Explicit Pathspecs
 ~~~
 
 returns `{2:45, "pdq":false}` as its result.
+
+## Embedded CBOR {#embedded-cbor}
+
+When a pathspec decodes a byte string as embedded CBOR, the byte string MUST contain exactly one complete, valid CBOR data item, and decoding MUST consume all of its contents.
+Empty contents, invalid or incomplete CBOR, or any bytes following the encoded item cause resolution failure.
+This operation does not decode a CBOR sequence containing multiple items.
+
+The explicit pathspec `simple(TBD0)` requires a byte string parent and selects the decoded item, regardless of its type.
+Applying it to any other parent type causes resolution failure.
+Each decoding operation unwraps exactly one byte string layer.
+If the decoded item is itself a byte string, another `simple(TBD0)` pathspec is needed to decode its contents.
+
+An implicit pathspec decodes one layer and then applies that same pathspec to the decoded array, map, or tag.
+It does not recursively decode a second byte string layer or select a decoded scalar item.
+A pointer that ends at a byte string selects that byte string unchanged; its contents are not decoded or validated as embedded CBOR.
+
+The following examples use each source item as the root document.
+As above, *failure* indicates resolution failure.
+
+| Source Item | CBOR Pointer | Result |
+|-------------+--------------+--------|
+| `h'181b'` | `[]` | `h'181b'` |
+| `h'181b'` | `TBD1([simple(TBD0)])` | `27` |
+| `h'181b'` | `[0]` | *failure* |
+| `h'81181b'` | `[0]` | `27` |
+| `h'42181b'` | `TBD1([simple(TBD0)])` | `h'181b'` |
+| `h'42181b'` | `TBD1([simple(TBD0), simple(TBD0)])` | `27` |
+| `h'42181b'` | `[0]` | *failure* |
+| `h''` | `TBD1([simple(TBD0)])` | *failure* |
+| `h'18'` | `TBD1([simple(TBD0)])` | *failure* |
+| `h'0001'` | `TBD1([simple(TBD0)])` | *failure* |
+| `27` | `TBD1([simple(TBD0)])` | *failure* |
 
 
 # Security Considerations

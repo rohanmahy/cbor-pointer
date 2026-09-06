@@ -194,13 +194,13 @@ For example, if a filter were invoked at the following parent element of our ini
 ]
 ~~~
 
-The CBOR Pointer Filter below selects the entire matching array element under the parent element, where the second element (`[TBD2(1)]`) matches the value "five":
+The CBOR Pointer Filter below selects the entire matching array element under the parent element, where the second element (selected by `TBD1([TBD2(1)])`) matches the value "five":
 
 ~~~ cbor-diag
 TBD6([           # Array Filter
-    [            # Per-element CBOR Pointer
+    TBD1([       # Per-element CBOR Pointer
         TBD2(1)  # 2nd Array element
-    ],
+    ]),
     ["five"]     # value to match per-element pointer result
 ])
 ~~~
@@ -214,9 +214,9 @@ TBD1([            # Explicit Pathspecs
     TBD4(777),    # Tag 777
     TBD2(0),      # 1st Array element
     TBD6([        # Array Filter
-      [             # Per-element CBOR Pointer
+      TBD1([        # Per-element CBOR Pointer
         TBD2(1)       # 2nd Array element
-      ],
+      ]),
       ["five"]      # value to match per-element pointer result
     ]),
     TBD2(2)       # 3rd Array element

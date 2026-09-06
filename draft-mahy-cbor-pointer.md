@@ -47,7 +47,7 @@ It is analogous to JSON Pointer.
 
 # Introduction
 
-CBOR Pointer is a syntax for identifying a single arbitrary subtree or element of a CBOR {{!RFC8494}} Document or a CBOR sequence.
+CBOR Pointer is a syntax for identifying a single arbitrary subtree or element of a CBOR {{!RFC8949}} Document or a CBOR sequence.
 It provides functionality analogous to JSON Pointer {{?RFC6901}} but supporting the full range of CBOR types.
 
 # Conventions and Definitions

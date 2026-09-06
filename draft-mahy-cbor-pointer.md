@@ -95,10 +95,38 @@ The semantics of an implicit pathspec depend on the type of the parent element.
 - If the parent element is an array, it returns the appropriate element:
   - if the pathspec is an unsigned integer, it matches the element at that zero-based position from the start of the array;
   - if the pathspec is a CBOR negative integer `i` and the array has `n` elements, it matches the element at zero-based position `n + i`, provided `0 <= n + i < n`; thus, `-1` matches the last element, `-2` the second-to-last element, and so on.
-- If the parent element is a map, the pathspec matches if it matches one of the map keys of the map. It returns the value of the map key.
+- If the parent element is a map, the pathspec identifies a key using the comparison rules in {{map-lookup}}. It returns the value associated with that key.
 - If the parent element is a tag, the pathspec matches if it matches the tag number. It returns the value inside the tag.
 - If the parent element is a byte string, one layer of embedded CBOR is decoded as described in {{embedded-cbor}}. The same pathspec is then evaluated against the decoded item if it is an array, map, or tag; otherwise, resolution fails.
 - If the root element is a CBOR sequence, the pathspec is evaluated as if the entire sequence were wrapped in an array.
+
+## Map Lookup {#map-lookup}
+
+Implicit and explicit map lookups MUST compare keys using the generic data model key-equivalence rules in Section 5.6.1 of {{RFC8949}}.
+Comparison is between CBOR values, not their serialized bytes or a programming language's native key representations.
+For example, the integer `1` and the floating-point number `1.0` are distinct keys, while floating-point `0.0` and `-0.0` are equivalent keys.
+Different encodings of the same integer identify the same key.
+These rules also apply recursively to compound keys.
+
+Map lookup requires a valid CBOR map with unique keys under these equivalence rules.
+Duplicate keys violate the CBOR map model (Section 5.6 of {{RFC8949}}).
+An implementation that detects them MUST report an invalid-map error rather than select one of the entries.
+Validation MAY be performed before pointer evaluation; an evaluator need not repeat checks already performed by a validating decoder.
+A decoder that silently discards duplicate entries does not establish that the input map was valid.
+These requirements do not require validating unrelated branches of the document before lookup.
+
+The following examples distinguish resolution failure from an invalid input map:
+
+| Source Item | CBOR Pointer | Result |
+|-------------+--------------+--------|
+| `{1: "integer", 1.0: "float"}` | `[1]` | `"integer"` |
+| `{1: "integer", 1.0: "float"}` | `[1.0]` | `"float"` |
+| `{1: "integer", 1.0: "float"}` | `["1"]` | *failure* |
+| `{0.0: "zero"}` | `[-0.0]` | `"zero"` |
+| `{"x": 10, "x": 20}` | `["x"]` | *invalid map* |
+
+For the first source item, the byte sequences `81 01` and `81 18 01` both encode the pointer `[1]` and select `"integer"`.
+The different integer encodings do not change the lookup result.
 
 ## Examples with Implicit Pathspecs
 

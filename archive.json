@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-09-06T02:45:13.656632+00:00",
+  "timestamp": "2026-09-08T02:55:16.862427+00:00",
   "repo": "rohanmahy/cbor-pointer",
   "labels": [
     {
@@ -50,5 +50,58 @@
     }
   ],
   "issues": [],
-  "pulls": []
+  "pulls": [
+    {
+      "number": 1,
+      "id": "PR_kwDOQEOASM8AAAABCacFVA",
+      "title": "Fix draft errors and inconsistencies",
+      "url": "https://github.com/rohanmahy/cbor-pointer/pull/1",
+      "state": "OPEN",
+      "author": "npmccallum",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Fix the CBOR reference, example errors, and inconsistencies in the existing rules. This also clarifies negative-index wording and fixes table formatting warnings.\n\nEach issue has a separate commit explaining the rationale.\n\nChecked with `make` (text and HTML) and an independent CBOR encoding check for the byte-string example.\n",
+      "createdAt": "2026-09-06T15:34:11Z",
+      "updatedAt": "2026-09-06T16:04:29Z",
+      "baseRepository": "rohanmahy/cbor-pointer",
+      "baseRefName": "main",
+      "baseRefOid": "8d420f5e129c0e8fc93ce2b73c21aba5544ea56c",
+      "headRepository": "npmccallum/cbor-pointer",
+      "headRefName": "fix/reference-and-examples",
+      "headRefOid": "2403750c62c25e832ba1311975b8cca8dcc0a5fb",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 2,
+      "id": "PR_kwDOQEOASM8AAAABCayY1w",
+      "title": "Clarify pointer evaluation and complete the draft",
+      "url": "https://github.com/rohanmahy/cbor-pointer/pull/2",
+      "state": "OPEN",
+      "author": "npmccallum",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "This builds on #1 with clearer evaluation and error handling, rules for embedded CBOR and map-key comparison, and security and IANA sections. It also removes array filters to keep searching separate from addressing, and adds Nathaniel McCallum as a co-author.\n\nEach issue has a separate commit explaining the rationale. Sequence semantics and canonicalization are left for later discussion.\n\nThe text and HTML drafts build successfully.\n\n#1 should merge first. [Changes after #1](https://github.com/npmccallum/cbor-pointer/compare/2403750c62c25e832ba1311975b8cca8dcc0a5fb...0556229).\n",
+      "createdAt": "2026-09-06T17:03:50Z",
+      "updatedAt": "2026-09-06T17:03:50Z",
+      "baseRepository": "rohanmahy/cbor-pointer",
+      "baseRefName": "main",
+      "baseRefOid": "8d420f5e129c0e8fc93ce2b73c21aba5544ea56c",
+      "headRepository": "npmccallum/cbor-pointer",
+      "headRefName": "improve-pointer-evaluation",
+      "headRefOid": "055622968a68a263a7311e47f3c9f2ef31238ad9",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    }
+  ]
 }
